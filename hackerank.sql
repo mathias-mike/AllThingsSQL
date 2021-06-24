@@ -133,3 +133,27 @@ FROM station;
 
 SELECT CEILING(AVG(salary) - AVG(CAST(REPLACE(CONCAT(salary, ''), '0', '') AS SIGNED)))
 FROM employees;
+
+
+-- Question - Interviews
+SELECT con.contest_id, con.hacker_id, con.name, SUM(stable.total_s) total_s, SUM(stable.total_as) total_as, SUM(vtable.total_v) total_v, SUM(vtable.total_uv) total_uv
+FROM contests con
+JOIN colleges col
+ON con.contest_id = col.contest_id
+JOIN challenges cha
+ON col.college_id = cha.college_id
+LEFT JOIN (
+    SELECT challenge_id, SUM(total_views) total_v, SUM(total_unique_views) total_uv
+    FROM view_stats
+    GROUP BY 1
+) vtable
+ON vtable.challenge_id = cha.challenge_id
+LEFT JOIN (
+    SELECT challenge_id, SUM(total_submissions) total_s, SUM(total_accepted_submissions) total_as
+    FROM submission_stats
+    GROUP BY 1
+) stable
+ON stable.challenge_id = cha.challenge_id
+GROUP BY 1, 2, 3
+HAVING SUM(stable.total_s) <> 0 AND SUM(stable.total_as) <> 0 AND SUM(vtable.total_v) <> 0 AND SUM(vtable.total_uv) <> 0
+ORDER BY 1;
